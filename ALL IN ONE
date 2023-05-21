@@ -1,0 +1,685 @@
+DL 1 - BOSTON
+ 
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from keras.models import Sequential
+from keras.layers import Dense
+ 
+boston = pd.read_csv('./boston.csv')
+boston.head(10)
+ 
+X = boston.loc[:, boston.columns != 'MEDV']
+y = boston.loc[:, boston.columns == 'MEDV']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=123)
+ 
+model = Sequential()
+ 
+model.add(Dense(128, input_shape=(13, ), activation='relu', name='dense_1'))
+model.add(Dense(64, activation='relu', name='dense_2'))
+model.add(Dense(1, activation='linear', name='dense_output'))
+ 
+model.compile(optimizer='adam', loss='mse', metrics=['mae'])
+model.summary()
+ 
+history = model.fit(X_train, y_train, epochs=100)
+ 
+mse_nn, mae_nn = model.evaluate(X_test, y_test)
+ 
+print('Mean squared error on test data: ', mse_nn)
+print('Mean absolute error on test data: ', mae_nn)
+ 
+ 
+DL 2 LETTER RECOGNITION
+ 
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn import model_selection
+from sklearn.preprocessing import StandardScaler
+from sklearn.neural_network import MLPClassifier
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix as cm1
+from sklearn.metrics import accuracy_score
+from sklearn import preprocessing
+ 
+dataset = pd.read_csv("letter-recognition.data", sep = ",")
+ 
+X = dataset.iloc[:, 1 : 17]
+Y = dataset.select_dtypes(include = [object])
+ 
+X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size = 0.20, random_state = 10)
+ 
+scaler = StandardScaler()
+scaler.fit(X_train)
+ 
+X_train = scaler.transform(X_train)
+X_validation = scaler.transform(X_validation)
+ 
+mlp = MLPClassifier(hidden_layer_sizes = (250, 300), max_iter = 1000000, activation = 'logistic')
+ 
+from yellowbrick.classifier import confusion_matrix
+cm = confusion_matrix(mlp,X_train,Y_train, X_validation, Y_validation, classes="A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z".split(','))
+ 
+# !pip install yellowbrick
+ 
+cm.fit(X_train, Y_train.values.ravel())
+ 
+cm.score(X_validation, Y_validation)
+ 
+predictions = cm.predict(X_validation)
+predictions
+ 
+print("Accuracy: ", accuracy_score(Y_validation, predictions))
+ 
+ 
+DL 3 FASHION
+ 
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+ 
+fashion_mnist = tf.keras.datasets.fashion_mnist
+(train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
+ 
+class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+ 
+ 
+train_images.shape
+ 
+ 
+train_images = train_images / 255.0
+test_images = test_images / 255.0
+ 
+# Verify data is in correct format
+plt.figure(figsize = (10, 10))
+for i in range(25):
+  plt.subplot(5, 5, i + 1)
+  plt.xticks([])
+  plt.yticks([])
+  plt.grid(False)
+  plt.imshow(train_images[i], cmap = plt.cm.binary)
+  plt.xlabel(class_names[train_labels[i]])
+plt.show
+ 
+from keras.models import Sequential
+from keras.layers import Dense
+ 
+model = Sequential()
+model = tf.keras.Sequential([
+    tf.keras.layers.Flatten(input_shape = (28, 28)),
+    tf.keras.layers.Dense(128, activation = 'relu'),
+    tf.keras.layers.Dense(10)
+])
+ 
+model.compile(optimizer = 'adam', loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits = True), metrics = ['accuracy'])
+model.summary()
+ 
+model.fit(train_images, train_labels, epochs = 10)
+ 
+test_loss, test_acc = model.evaluate(test_images, test_labels, verbose = 2)
+print("\n Test accuracy = ", test_acc)
+ 
+probability_model = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
+ 
+predictions = probability_model.predict(test_images)
+ 
+def plot_image(i, predictions_array, true_label, img):
+  true_label, img = true_label[i], img[i]
+  plt.grid(False)
+  plt.xticks([])
+  plt.yticks([])
+ 
+  plt.imshow(img, cmap=plt.cm.binary)
+ 
+  predicted_label = np.argmax(predictions_array)
+  if predicted_label == true_label:
+    color = 'blue'
+  else:
+    color = 'red'
+ 
+  plt.xlabel("{} {:2.0f}% ({})".format(class_names[predicted_label],
+                                100*np.max(predictions_array),
+                                class_names[true_label]),
+                                color=color)
+     
+rows = 5
+cols = 5
+total_images = rows * cols
+plt.figure(figsize = (2*2*cols, 2*rows))
+for i in range(total_images):
+  plt.subplot(rows, cols, i + 1)
+  plot_image(i, predictions[i], test_labels, test_images)
+plt.tight_layout()
+plt.show()
+ 
+ 
+ 
+HPC BFS DFS
+#include<iostream>
+#include<omp.h>
+#include<stack>
+#include<queue>
+ 
+using namespace std;
+ 
+struct TreeNode{
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+};
+ 
+void pBFS(TreeNode* root){
+    queue<TreeNode*> q;
+    q.push(root);
+    while(!q.empty()){
+        int qs = q.size();
+        #pragma omp parallel for
+        for(int i = 0; i < qs; i++){
+            TreeNode* node;
+            #pragma omp critical
+            {
+                node = q.front();
+                cout << node->val << " ";
+                q.pop();
+                if(node->left) q.push(node->left);
+                if(node->right) q.push(node->right);
+            }
+        }
+    }
+}
+ 
+void pDFS(TreeNode* root){
+    stack<TreeNode*> s;
+    s.push(root);
+    while(!s.empty()){
+        int ss = s.size();
+        #pragma omp parallel for
+        for(int i = 0; i < ss; i++){
+            TreeNode* node;
+            #pragma omp critical
+            {
+                node = s.top();
+                cout << node->val << " ";
+                s.pop();
+                if(node->right) s.push(node->right);
+                if(node->left) s.push(node->left);
+            }
+        }
+    }
+}
+ 
+ 
+int main(){
+    // Construct Tree
+    TreeNode* tree = new TreeNode(1);
+    tree->left = new TreeNode(2);
+    tree->right = new TreeNode(3); 
+    tree->left->left = new TreeNode(4);
+    tree->left->right = new TreeNode(5);
+    tree->right->left = new TreeNode(6);
+    tree->right->right = new TreeNode(7);
+ 
+    /*
+    Our Tree Looks like this:
+                1
+            2       3
+        4     5   6    7
+        
+    */
+ 
+    cout << "Parallel BFS: ";
+    pBFS(tree);
+    cout << "\n";
+    cout << "Parallel DFS: ";
+    pDFS(tree);
+}
+ 
+ 
+ 
+ 
+HPC PARALLEL REDUCTION
+ 
+#include<iostream>
+#include<omp.h>
+ 
+using namespace std;
+int minval(int arr[], int n){
+  int minval = arr[0];
+  #pragma omp parallel for reduction(min : minval)
+    for(int i = 0; i < n; i++){
+      if(arr[i] < minval) minval = arr[i];
+    }
+  return minval;
+}
+ 
+int maxval(int arr[], int n){
+  int maxval = arr[0];
+  #pragma omp parallel for reduction(max : maxval)
+    for(int i = 0; i < n; i++){
+      if(arr[i] > maxval) maxval = arr[i];
+    }
+  return maxval;
+}
+ 
+int sum(int arr[], int n){
+  int sum = 0;
+  #pragma omp parallel for reduction(+ : sum)
+    for(int i = 0; i < n; i++){
+      sum += arr[i];
+    }
+  return sum;
+}
+ 
+int average(int arr[], int n){
+  return (double)sum(arr, n) / n;
+}
+ 
+int main(){
+  int n = 5;
+  int arr[] = {1,2,3,4,5};
+  cout << "The minimum value is: " << minval(arr, n) << '\n';
+  cout << "The maximum value is: " << maxval(arr, n) << '\n';
+  cout << "The summation is: " << sum(arr, n) << '\n';
+  cout << "The average is: " << average(arr, n) << '\n';
+  return 0;
+}
+ 
+ 
+HPC min max sum
+ 
+#include <iostream>
+//#include <vector>
+#include <omp.h>
+#include <climits>
+using namespace std;
+void min_reduction(int arr[], int n) {
+ int min_value = INT_MAX;
+ #pragma omp parallel for reduction(min: min_value)
+ for (int i = 0; i < n; i++) {
+ if (arr[i] < min_value) {
+ min_value = arr[i];
+ }
+ }
+ cout << "Minimum value: " << min_value << endl;
+}
+void max_reduction(int arr[], int n) {
+ int max_value = INT_MIN;
+ #pragma omp parallel for reduction(max: max_value)
+ for (int i = 0; i < n; i++) {
+ if (arr[i] > max_value) {
+ max_value = arr[i];
+ }
+ }
+ cout << "Maximum value: " << max_value << endl;
+}
+void sum_reduction(int arr[], int n) {
+ int sum = 0;
+ #pragma omp parallel for reduction(+: sum)
+ for (int i = 0; i < n; i++) {
+ sum += arr[i];
+ }
+ cout << "Sum: " << sum << endl;
+}
+void average_reduction(int arr[], int n) {
+ int sum = 0;
+ #pragma omp parallel for reduction(+: sum)
+ for (int i = 0; i < n; i++) {
+ sum += arr[i];
+ }
+ cout << "Average: " << (double)sum / (n-1) << endl;
+}
+int main() {
+ int *arr,n;
+ cout<<"\n enter total no of elements=>";
+ cin>>n;
+ arr=new int[n];
+ cout<<"\n enter elements=>";
+ for(int i=0;i<n;i++)
+ {
+ cin>>arr[i];
+ }
+// int arr[] = {5, 2, 9, 1, 7, 6, 8, 3, 4};
+// int n = size(arr);
+ min_reduction(arr, n);
+ max_reduction(arr, n);
+ sum_reduction(arr, n);
+ average_reduction(arr, n);
+} 
+ 
+ 
+SORTING
+ 
+#include<iostream>
+#include<stdlib.h>
+#include<omp.h>
+using namespace std;
+void bubble(int *, int);
+void swap(int &, int &);
+void bubble(int *a, int n)
+{
+ for( int i = 0; i < n; i++ )
+ {
+ int first = i % 2;
+ #pragma omp parallel for shared(a,first)
+ for( int j = first; j < n-1; j += 2 )
+ {
+ if( a[ j ] > a[ j+1 ] )
+ {
+ swap( a[ j ], a[ j+1 ] );
+ }
+ }
+ }
+}
+void swap(int &a, int &b)
+{
+ int test;
+ test=a;
+ a=b;
+ b=test;
+}
+int main()
+{
+ int *a,n;
+ cout<<"\n enter total no of elements=>";
+ cin>>n;
+ a=new int[n];
+ cout<<"\n enter elements=>";
+ for(int i=0;i<n;i++)
+ {
+ cin>>a[i];
+ }
+ 
+ bubble(a,n);
+ 
+ cout<<"\n sorted array is=>";
+ for(int i=0;i<n;i++)
+ {
+ cout<<a[i]<<endl;
+ }
+return 0;
+}
+ 
+Output :
+enter total no of elements=>5
+enter elements=>34
+21
+23
+44
+12
+sorted array is=>12
+21
+23
+34
+44
+Title: Parallel Merge Sort based on existing algorithms using OpenMP
+#include<iostream>
+#include<stdlib.h>
+#include<omp.h>
+using namespace std;
+void mergesort(int a[],int i,int j);
+void merge(int a[],int i1,int j1,int i2,int j2);
+void mergesort(int a[],int i,int j)
+{
+ int mid;
+ if(i<j)
+ {
+ mid=(i+j)/2;
+ 
+ #pragma omp parallel sections
+ {
+ #pragma omp section
+ {
+ mergesort(a,i,mid);
+ }
+ #pragma omp section
+ {
+ mergesort(a,mid+1,j);
+ }
+ }
+ merge(a,i,mid,mid+1,j);
+ }
+}
+ 
+void merge(int a[],int i1,int j1,int i2,int j2)
+{
+ int temp[1000];
+ int i,j,k;
+ i=i1;
+ j=i2;
+ k=0;
+ 
+ while(i<=j1 && j<=j2)
+ {
+ if(a[i]<a[j])
+ {
+ temp[k++]=a[i++];
+ }
+ else
+ {
+ temp[k++]=a[j++];
+ }
+ }
+ 
+ while(i<=j1)
+ {
+ temp[k++]=a[i++];
+ }
+ 
+ while(j<=j2)
+ {
+ temp[k++]=a[j++];
+ }
+ 
+ for(i=i1,j=0;i<=j2;i++,j++)
+ {
+ a[i]=temp[j];
+ }
+}
+int main()
+{
+ int *a,n,i;
+ cout<<"\n enter total no of elements=>";
+ cin>>n;
+ a= new int[n];
+ cout<<"\n enter elements=>";
+ for(i=0;i<n;i++)
+ {
+ cin>>a[i];
+ }
+ mergesort(a,0,n-1)
+ cout<<"\n sorted array is=>";
+ for(i=0;i<n;i++)
+ {
+ cout<<"\n"<<a[i];
+ }
+ 
+ return 0;
+} 
+ 
+ 
+ 
+ 
+ 
+.CU
+ 
+!pip install git+https://github.com/afnan47/cuda.git
+%load_ext nvcc_plugin
+ 
+%%cu
+#include <iostream>
+using namespace std;
+ 
+__global__
+void add(int* A, int* B, int* C, int size) {
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+ 
+    if (tid < size) {
+        C[tid] = A[tid] + B[tid];
+    }
+}
+ 
+ 
+void initialize(int* vector, int size) {
+    for (int i = 0; i < size; i++) {
+        vector[i] = rand() % 10;
+    }
+}
+ 
+void print(int* vector, int size) {
+    for (int i = 0; i < size; i++) {
+        cout << vector[i] << " ";
+    }
+    cout << endl;
+}
+ 
+int main() {
+    int N = 4;
+    int* A, * B, * C;
+ 
+    int vectorSize = N;
+    size_t vectorBytes = vectorSize * sizeof(int);
+ 
+    A = new int[vectorSize];
+    B = new int[vectorSize];
+    C = new int[vectorSize];
+ 
+    initialize(A, vectorSize);
+    initialize(B, vectorSize);
+ 
+    cout << "Vector A: ";
+    print(A, N);
+    cout << "Vector B: ";
+    print(B, N);
+ 
+    int* X, * Y, * Z;
+    cudaMalloc(&X, vectorBytes);
+    cudaMalloc(&Y, vectorBytes);
+    cudaMalloc(&Z, vectorBytes);
+ 
+    cudaMemcpy(X, A, vectorBytes, cudaMemcpyHostToDevice);
+    cudaMemcpy(Y, B, vectorBytes, cudaMemcpyHostToDevice);
+ 
+    int threadsPerBlock = 256;
+    int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
+ 
+    add<<<blocksPerGrid, threadsPerBlock>>>(X, Y, Z, N);
+ 
+    cudaMemcpy(C, Z, vectorBytes, cudaMemcpyDeviceToHost);
+ 
+    cout << "Addition: ";
+    print(C, N);
+ 
+    delete[] A;
+    delete[] B;
+    delete[] C;
+ 
+    cudaFree(X);
+    cudaFree(Y);
+    cudaFree(Z);
+ 
+    return 0;
+}
+ 
+%%cu
+#include <iostream>
+using namespace std;
+ 
+ 
+// CUDA code to multiply matrices
+__global__ void multiply(int* A, int* B, int* C, int size) {
+    // Uses thread idices and block indices to compute each element
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+ 
+    if (row < size && col < size) {
+        int sum = 0;
+        for (int i = 0; i < size; i++) {
+            sum += A[row * size + i] * B[i * size + col];
+        }
+        C[row * size + col] = sum;
+    }
+}
+ 
+ 
+void initialize(int* matrix, int size) {
+    for (int i = 0; i < size * size; i++) {
+        matrix[i] = rand() % 10;
+    }
+}
+ 
+ 
+void print(int* matrix, int size) {
+    for (int row = 0; row < size; row++) {
+        for (int col = 0; col < size; col++) {
+            cout << matrix[row * size + col] << " ";
+        }
+        cout << '\n';
+    }
+    cout << '\n';
+}
+ 
+ 
+int main() {
+    int* A, * B, * C;
+ 
+    int N = 2;
+    int blockSize =  16;
+ 
+    int matrixSize = N * N;
+    size_t matrixBytes = matrixSize * sizeof(int);
+ 
+    A = new int[matrixSize];
+    B = new int[matrixSize];
+    C = new int[matrixSize];
+ 
+    initialize(A, N);
+    initialize(B, N);
+    cout << "Matrix A: \n";
+    print(A, N);
+ 
+    cout << "Matrix B: \n";
+    print(B, N);
+ 
+    
+    int* X, * Y, * Z;
+    // Allocate space
+    cudaMalloc(&X, matrixBytes);
+    cudaMalloc(&Y, matrixBytes);
+    cudaMalloc(&Z, matrixBytes);
+ 
+    // Copy values from A to X
+    cudaMemcpy(X, A, matrixBytes, cudaMemcpyHostToDevice);
+    
+    // Copy values from A to X and B to Y
+    cudaMemcpy(Y, B, matrixBytes, cudaMemcpyHostToDevice);
+ 
+    // Threads per CTA dimension
+    int THREADS = 2;
+ 
+    // Blocks per grid dimension (assumes THREADS divides N evenly)
+    int BLOCKS = N / THREADS;
+ 
+    // Use dim3 structs for block  and grid dimensions
+    dim3 threads(THREADS, THREADS);
+    dim3 blocks(BLOCKS, BLOCKS);
+ 
+    // Launch kernel
+    multiply<<<blocks, threads>>>(X, Y, Z, N);
+ 
+    cudaMemcpy(C, Z, matrixBytes, cudaMemcpyDeviceToHost);
+    cout << "Multiplication of matrix A and B: \n";
+    print(C, N);
+ 
+    delete[] A;
+    delete[] B;
+    delete[] C;
+ 
+    cudaFree(X);
+    cudaFree(Y);
+    cudaFree(Z);
+ 
+    return 0;
+}
+ 
+ 
+ 
