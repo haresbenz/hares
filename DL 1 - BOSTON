@@ -1,0 +1,31 @@
+DL 1 - BOSTON
+ 
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from keras.models import Sequential
+from keras.layers import Dense
+ 
+boston = pd.read_csv('./boston.csv')
+boston.head(10)
+ 
+X = boston.loc[:, boston.columns != 'MEDV']
+y = boston.loc[:, boston.columns == 'MEDV']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=123)
+ 
+model = Sequential()
+ 
+model.add(Dense(128, input_shape=(13, ), activation='relu', name='dense_1'))
+model.add(Dense(64, activation='relu', name='dense_2'))
+model.add(Dense(1, activation='linear', name='dense_output'))
+ 
+model.compile(optimizer='adam', loss='mse', metrics=['mae'])
+model.summary()
+ 
+history = model.fit(X_train, y_train, epochs=100)
+ 
+mse_nn, mae_nn = model.evaluate(X_test, y_test)
+ 
+print('Mean squared error on test data: ', mse_nn)
+print('Mean absolute error on test data: ', mae_nn)
+ 
+ 
